@@ -1,0 +1,34 @@
+meta {
+  name: Actualiza producto
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{URL_INI}}:{{PORT_INI}}/producto/:id
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: 67366e7adbe5dd938cc3f865
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3MzY1ZjYyNmMzZGI3YzIyY2VjMjNkMCIsImVtYWlsIjoiZEBsYXJhLmNvbSIsImlhdCI6MTczMTYxNjYxMX0.vQMK-JNMz8wnPgW9PIQrp1IjJQ82PHQs26WSKSGSxsU
+}
+
+body:json {
+  {
+      "nombre": "Miel de Alta 3",
+      "tipo": "Silvestre",
+      "cantidad": 500,
+      "precio": 12.50,
+      "urlImagen": "http://www.example.com/images/miel-alta-montana.jpg",
+      "descripcion": "Miel de alta calidad recolectada en áreas montañosas, rica en nutrientes.",
+      "fechaCaducidad": "2025-12-31T00:00:00Z",
+      "stock": 100,
+      "tipoProducto": "67362448735b6890"
+  }
+  
+}

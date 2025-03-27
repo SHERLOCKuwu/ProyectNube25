@@ -1,0 +1,25 @@
+meta {
+  name: Consulta producto por ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{URL_INI}}:{{PORT_INI}}/producto/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 67366e7adbe5dd938cc3f865
+  "nombre": "Miel de Azahar",
+  "tipo": "Flor de Azahar",
+  "cantidad": 500,
+  "precio": 10.5,
+  "urlImagen": "http://www.example.com/images/miel-azahar.jpg",
+  "descripcion": "Miel suave de flor de azahar, ideal para endulzar tés.",
+  "fechaCaducidad": "2025-12-31T00:00:00.000Z",
+  "stock": 150,
+  "_id": "67365d1f6c3db7c22cec23cc",
+  "__v": 0
+}

@@ -1,0 +1,18 @@
+meta {
+  name: Consulta producto
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{URL_INI}}:{{PORT_INI}}/producto?page=1&pageSize=5&nombre&tipo=Silvestre
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  pageSize: 5
+  nombre: 
+  tipo: Silvestre
+}

@@ -1,0 +1,23 @@
+meta {
+  name: subir imagen
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{URL_INI}}:{{PORT_INI}}/productoMiel/:id/upload
+  body: multipartForm
+  auth: bearer
+}
+
+params:path {
+  id: 67395edaa5d96870494a74d5
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3MzkwYzBjM2NhN2EyY2VhZmFkYmIzMiIsImVtYWlsIjoiYWRtaW4xOEBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTczMTc5MTg4NX0.hHod-LtFcLjQ32TMt7PIaafCgLAx41mcnG3hsjODEZ4
+}
+
+body:multipart-form {
+  file: @file(C:\Users\LENOVO\Desktop\producto1.jpg)
+}

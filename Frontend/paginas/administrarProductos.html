@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listado de Productos - Miel Dorada</title>
+    <link rel="stylesheet" href="../estilos/bootstrap.min.css">
+    <link rel="stylesheet" href="../estilos/estilos.css">
+    <link rel="icon" href="../imagenes/logo12.png" type="image/png">
+    <style>
+       
+    </style>
+</head>
+
+<body class="body-productos">
+    <div class="header">
+        <h1><strong>Miel Dorada</strong></h1>
+        <h3>La mejor miel orgánica y artesanal</h3>
+        <br>
+        <h3>Administrar Datos</h3>
+    </div>
+
+    <nav class="nav">
+        <a class="nav-link" href="index.html">Inicio</a>
+        <a class="nav-link" href="administrarProductos.html">Productos</a>
+        <a class="nav-link" href="upload.html">Cargar Archivo </a>
+        
+    </nav>
+
+    <div class=" container">
+        <h1 class="display-4 text-center mt-4">Listado de Productos</h1>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <a href="form.html?Mode=INS&id=" class="button2">Agregar Registro</a>
+        
+            <div class="text-end">
+                <label for="registrosPorPagina" class="display-5">Registros por página:</label>
+                <select id="registrosPorPagina" class="display-5">
+                    <option value="5"selected>5</option>
+                    <option value="10" >10</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+        </div>
+        
+        
+        
+
+        
+
+        <div class="table-container">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Fecha de Caducidad</th>
+                        <th>Stock</th>
+                        <th>Actualizar</th>
+                        <th>Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody id="miTabla"></tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button id="anterior" class="button2" disabled>Anterior</button>
+            <span id="paginaActual" class="display-5">Página 1</span>
+            <button id="siguiente" class="button2">Siguiente</button>
+        </div>
+    </div>
+
+    
+    <div class="footer" style="margin-top: 30px; display: flex; justify-content: center; align-items: center; text-align: center; height: 50px;">
+        <p>&copy; 2024 Miel Dorada. Todos los derechos reservados.</p>
+    </div>
+
+    <script>
+        let pagina = 1;
+        let registrosPorPagina = 5;
+
+        function cargarTabla() {
+            const url = `http://localhost:3001/productoPaginacion?page=${pagina}&limit=${registrosPorPagina}`;
+            fetch(url)
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error('Error en la respuesta del servidor');
+                })
+                .then(data => {
+                    const tableBody = document.querySelector('#miTabla');
+                    tableBody.innerHTML = '';
+
+                    data.productos.forEach(item => {
+                        const fila = tableBody.insertRow();
+                        fila.insertCell().textContent = item._id;
+                        fila.insertCell().textContent = item.nombre;
+                        fila.insertCell().textContent = item.tipo;
+                        fila.insertCell().textContent = item.precio;
+                        fila.insertCell().textContent = item.fechaCaducidad;
+                        fila.insertCell().textContent = item.stock;
+
+                        const linkCellUpdate = fila.insertCell();
+                        const linkUpdate = document.createElement('a');
+                        linkUpdate.href = `./form.html?Mode=UPD&id=${item._id}`;
+                        linkUpdate.textContent = 'Actualizar';
+                        linkUpdate.classList.add('btn', 'btn-warning', 'btn-sm');
+                        linkCellUpdate.appendChild(linkUpdate);
+
+                        const linkCellDelete = fila.insertCell();
+                        const linkDelete = document.createElement('a');
+                        linkDelete.href = `./form.html?Mode=DLT&id=${item._id}`;
+                        linkDelete.textContent = 'Eliminar';
+                        linkDelete.classList.add('btn', 'btn-danger', 'btn-sm');
+                        linkCellDelete.appendChild(linkDelete);
+                    });
+
+                    document.querySelector('#paginaActual').textContent = `Página ${pagina}`;
+                    document.querySelector('#anterior').disabled = pagina === 1;
+                })
+                .catch(err => console.error(err));
+        }
+
+        document.querySelector('#registrosPorPagina').addEventListener('change', (e) => {
+            registrosPorPagina = e.target.value;
+            pagina = 1;
+            cargarTabla();
+        });
+
+        document.querySelector('#anterior').addEventListener('click', () => {
+            if (pagina > 1) {
+                pagina--;
+                cargarTabla();
+            }
+        });
+
+        document.querySelector('#siguiente').addEventListener('click', () => {
+            pagina++;
+            cargarTabla();
+        });
+
+        cargarTabla();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+meta {
+  name: Crear producto 2
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{URL_INI}}:{{PORT_INI}}/producto
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3MzkwYzBjM2NhN2EyY2VhZmFkYmIzMiIsImVtYWlsIjoiYWRtaW4xOEBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTczMTc5MTg4NX0.hHod-LtFcLjQ32TMt7PIaafCgLAx41mcnG3hsjODEZ4
+}
+
+body:json {
+  {
+      "nombre": "Miel de Alta 1",
+          "tipo": "Azahar",
+          "cantidad": 500,
+          "precio": 15.00,
+          "fechaCaducidad": "2025-12-31T00:00:00Z",
+          "stock": 120,
+      "ID_tipoProducto": "67396269970cfaa383e35a1e"
+  }
+  
+  
+  
+  
+}

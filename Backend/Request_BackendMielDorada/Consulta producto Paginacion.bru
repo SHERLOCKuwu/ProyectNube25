@@ -1,0 +1,16 @@
+meta {
+  name: Consulta producto Paginacion
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{URL_INI}}:{{PORT_INI}}/productoPaginacion?page=1&pageSize=2
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  pageSize: 2
+}

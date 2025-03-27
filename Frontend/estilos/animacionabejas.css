@@ -1,0 +1,47 @@
+
+.abeja {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    animation-duration: 20s; 
+    animation-iteration-count: infinite;
+}
+
+@keyframes volar1 {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    20% {
+        transform: translate(50vw, -50px) rotate(30deg);
+    }
+    40% {
+        transform: translate(50vw, 50vh) rotate(180deg);
+    }
+    60% {
+        transform: translate(-50px, 50vh) rotate(330deg);
+    }
+    80% {
+        transform: translate(-50px, -50px) rotate(300deg);
+    }
+    100% {
+        transform: translate(0, 0) rotate(360deg);
+    }
+}
+
+@keyframes volar2 {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    25% {
+        transform: translate(-50vw, 20px) rotate(45deg);
+    }
+    50% {
+        transform: translate(-50vw, -50vh) rotate(135deg);
+    }
+    75% {
+        transform: translate(20px, -50vh) rotate(225deg);
+    }
+    100% {
+        transform: translate(0, 0) rotate(360deg);
+    }
+}

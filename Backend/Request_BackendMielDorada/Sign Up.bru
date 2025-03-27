@@ -1,0 +1,25 @@
+meta {
+  name: Sign Up
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{URL_INI}}:{{PORT_INI}}/signup
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3MzYzMWMxNWIxMDgxNTY1Y2Y3ZmY2ZiIsImVtYWlsIjoiakBsb3Vpcy5jb20iLCJpYXQiOjE3MzE2MDQ5Mjl9.dmzOnMkrDwO4AC95nB8BoCJ9qZ2k4HwMqvDjBHoAVhE
+}
+
+body:json {
+  {
+      "email": "admin1800@example.com",
+      "password": "d456",
+      "role": "user"
+  }
+  
+  
+}

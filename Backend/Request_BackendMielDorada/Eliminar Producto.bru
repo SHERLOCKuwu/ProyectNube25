@@ -1,0 +1,19 @@
+meta {
+  name: Eliminar Producto
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{URL_INI}}:{{PORT_INI}}/producto/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 6739812269b449f3f9a8deca
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Mzk3ZWNlNDNjMzc5Zjc1Njk1YmRiYSIsImVtYWlsIjoiYWRtaW4xMEBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTczMTgyMTI2M30.11szpG1-UmgV9Rju6KnqM76PoFQm3oTY90zCuqGRfFY
+}

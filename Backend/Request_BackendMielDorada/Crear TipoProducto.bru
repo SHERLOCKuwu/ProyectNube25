@@ -1,0 +1,21 @@
+meta {
+  name: Crear TipoProducto
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{URL_INI}}:{{PORT_INI}}/tipoProducto
+  body: json
+  auth: none
+}
+
+body:json {
+   {
+          "nombre": "Miel de Girasol",
+          "descripcion": "Miel dorada y densa, extraída de flores de girasol, con un sabor ligeramente afrutado."
+      }
+  
+  
+  
+}

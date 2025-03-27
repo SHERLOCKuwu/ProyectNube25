@@ -1,0 +1,21 @@
+
+@keyframes cambiarFondo {
+    0% {
+        background-image: url('../imagenes/fondos1.png');
+    }
+    20% {
+        background-image: url('../imagenes/fondos2.png');
+    }
+    40% {
+        background-image: url('../imagenes/fondos3.png');
+    }
+    60% {
+        background-image: url('../imagenes/fondos4.png');
+    }
+    80% {
+        background-image: url('../imagenes/fondos5.png');
+    }
+    100% {
+        background-image: url('../imagenes/fondos1.png'); 
+    }
+}

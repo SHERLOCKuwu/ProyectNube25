@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listado de Productos - Miel Dorada</title>
+    <link rel="stylesheet" href="../estilos/bootstrap.min.css">
+    <link rel="stylesheet" href="../estilos/estilos.css">
+    <link rel="icon" href="../imagenes/logo12.png" type="image/png">
+    <style>
+
+    </style>
+</head>
+
+<body class="body-productos">
+    <div class="header">
+        <h1><strong>Miel Dorada</strong></h1>
+        <h3>La mejor miel orgánica y artesanal</h3>
+        <span id="auth-status"></span>
+    </div>
+
+    <nav class="nav">
+        <a class="nav-link" href="index.html">Inicio</a>
+        <a class="nav-link" href="mision_y_vision.html">Sobre Nosotros</a>
+        <a class="nav-link" href="objetivos.html">Objetivos</a>
+        <a class="nav-link" href="productos.html">Productos</a>
+        <a class="nav-link" href="contacto.html">Contacto</a>
+    </nav>
+
+    <div class="container">
+        <h1 class="display-4 text-center mt-4">Productos</h1>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div class="text-end">
+                <label for="registrosPorPagina" class="display-5">Registros por página:</label>
+                <select id="registrosPorPagina" class="display-5">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Fecha de Caducidad</th>
+                        <th>Stock</th>
+                        <th>Imagen</th>
+                    </tr>
+                </thead>
+                <tbody id="miTabla"></tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button id="anterior" class="button2" disabled>Anterior</button>
+            <span id="paginaActual" class="display-5">Página 1</span>
+            <button id="siguiente" class="button2">Siguiente</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer"
+        style="margin-top: 30px; display: flex; justify-content: center; align-items: center; text-align: center; height: 50px;">
+        <p>&copy; 2024 Miel Dorada. Todos los derechos reservados.</p>
+    </div>
+
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel">Cerrar Sesión</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    ¿Estás seguro de que deseas cerrar sesión?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary " data-dismiss="modal">Cancelar</button>
+                    <button id="confirm-logout-btn" type="button" class="btn btn-primary btn-danger">Cerrar
+                        Sesión</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <script>
+
+    </script>
+
+
+
+
+    <script src="../js/jquery-3.2.1.slim.min.js"></script>
+    <script src="../js/popper.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/menu.js"></script>
+    <script src="../js/logueado.js"></script>
+    <script src="../js/paginacion.js"></script>
+
+</body>
+
+</html>

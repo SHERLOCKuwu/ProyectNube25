@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miel Dorada</title>
+    <link rel="stylesheet" href="../estilos/bootstrap.min.css">
+    <link rel="stylesheet" href="../estilos/estilos.css">
+    <link rel="stylesheet" href="../estilos/animaciones.css">
+    <link rel="icon" href="../imagenes/logo12.png" type="image/png">
+</head>
+
+<body>
+
+    <div class="header">
+        <h1><strong>Miel Dorada</strong></h1>
+        <h3>La mejor miel orgánica y artesanal</h3>
+        <br>
+        <h3>Administrar Datos</h3>
+    </div>
+
+    <nav class="nav">
+        <a class="nav-link" href="index.html">Inicio</a>
+        <a class="nav-link" href="administrarProductos.html">Productos</a>
+        <a class="nav-link" href="upload.html">Cargar Archivo </a>
+        
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <img src="../imagenes/logo11.png" class="img-fluid rounded" alt="Logo de Miel Dorada">
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="footer">
+        <p1>&copy; 2024 Miel Dorada. Todos los derechos reservados.</p1>
+    </div>
+
+
+    <script src="../js/jquery-3.2.1.slim.min.js"></script>
+    <script src="../js/popper.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/menu.js"></script>
+
+    <script>
+        // Verifica si el usuario está logueado
+        window.onload = function() {
+            const token = localStorage.getItem('token');
+            const authStatus = document.getElementById('auth-status');
+            
+            if (token) {
+                authStatus.innerHTML = `¡Hola, estás logueado!`;
+            } else {
+                authStatus.innerHTML = `<a href="login.html">Iniciar sesión</a> o <a href="signup.html">Registrarse</a>`;
+            }
+        };
+    </script>
+
+</body>
+
+</html>
