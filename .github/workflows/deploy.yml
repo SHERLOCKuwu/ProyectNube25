@@ -37,11 +37,31 @@ jobs:
             echo "⚠️ No hay tests - Continuando..."
           fi
 
-      - name: Build Frontend
+      - name: Prepare Frontend
         run: |
           cd Frontend
-          echo "✅ Frontend estático - No necesita build"
-          mkdir -p dist && cp -r *.html css/ js/ imagenes/ dist/
+          echo "📁 Estructura actual:"
+          ls -R
+          
+          # Crea directorio dist si no existe
+          mkdir -p dist
+          
+          # Copia archivos HTML (si están en paginas/)
+          if [ -d "paginas" ]; then
+            cp -r paginas/*.html dist/
+          else
+            cp -r *.html dist/ || echo "⚠️ No hay HTML en raíz"
+          fi
+          
+          # Copia assets (usa el nombre correcto de tus carpetas)
+          for folder in estilos css js imagenes; do
+            if [ -d "$folder" ]; then
+              cp -r "$folder" dist/
+            fi
+          done
+          
+          echo "✅ Frontend preparado en /dist"
+          ls -R dist
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
