@@ -3,9 +3,11 @@ name: CI/CD Miel Dorada
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  test-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -15,12 +17,49 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Verify
+      - name: Run Backend Tests
+        env:
+          DB_TEST_URL: mongodb://localhost:27017/testdb
         run: |
-          echo "✅ Todo está correcto!"
-          echo "Node: $(node --version)"
-          echo "NPM: $(npm --version)"
+          npm test -- Backend/
+
+build-frontend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - run: npm install
+      
+      - name: Build Frontend
+        run: |
+          cd Frontend
+          npm run build
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-dist
+          path: Frontend/dist
+
+deploy:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel --prod --confirm
