@@ -1,7 +1,0 @@
-{
-    "build": {
-      "builder": "nixpacks",
-      "baseDirectory": "backend",
-      "startCommand": "npm start"
-    }
-  }

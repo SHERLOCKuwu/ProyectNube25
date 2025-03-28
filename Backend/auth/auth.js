@@ -2,7 +2,9 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const SECRET_KEY = 'ClaseComputacionNube2025';
+require('dotenv').config()
+
+const SECRET_KEY = process.env.SECRET_KEY;
 
 exports.signUp = async (req, res) => {
     try {
