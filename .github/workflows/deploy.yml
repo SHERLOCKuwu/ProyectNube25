@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  PORT: 3001 
+
 jobs:
-  test-backend:
+  test-and-build:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,42 +28,23 @@ jobs:
 
       - name: Run Backend Tests
         env:
-          DB_TEST_URL: mongodb://localhost:27017/testdb
+          DB_URL: ${{ secrets.DB_URL }}           # Usa tu secret de MongoDB Atlas
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}   # Usa tu secret para JWT
         run: |
+          echo "🔐 Variables cargadas correctamente"
           npm test -- Backend/
 
-build-frontend:
-    needs: test-backend
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - run: npm install
-      
       - name: Build Frontend
         run: |
           cd Frontend
+          npm install
           npm run build
-          
-      - name: Upload Artifact
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: frontend-dist
-          path: Frontend/dist
-
-deploy:
-    needs: build-frontend
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-      
-      - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          vercel --prod --confirm
+          name: production-files
+          path: |
+            Backend/
+            Frontend/dist/
+            package.json
