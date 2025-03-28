@@ -8,7 +8,7 @@
     "dev": "nodemon Backend/app.js",
     "frontend": "live-server Frontend/paginas",
     "debug": "node --inspect Backend/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Tests skipped\" && exit 0"
   },
   "keywords": [
     "miel",

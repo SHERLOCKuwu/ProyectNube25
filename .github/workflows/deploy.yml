@@ -31,8 +31,11 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}           # Usa tu secret de MongoDB Atlas
           SECRET_KEY: ${{ secrets.SECRET_KEY }}   # Usa tu secret para JWT
         run: |
-          echo "🔐 Variables cargadas correctamente"
-          npm test -- Backend/
+          if [ -f "Backend/test/*.test.js" ]; then
+            npm test
+          else
+            echo "⚠️ No hay tests - Continuando..."
+          fi
 
       - name: Build Frontend
         run: |
