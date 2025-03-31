@@ -79,7 +79,7 @@
             const password = document.getElementById('password').value;
 
             // Enviar datos al backend
-            fetch('http://localhost:3001/signup', {
+            fetch('https://proyectnube25-production-e6e4.up.railway.app/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
