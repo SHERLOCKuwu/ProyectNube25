@@ -83,7 +83,7 @@
         let registrosPorPagina = 5;
 
         function cargarTabla() {
-            const url = `http://localhost:3001/productoPaginacion?page=${pagina}&limit=${registrosPorPagina}`;
+            const url = `https://proyectnube25-production-e6e4.up.railway.app/administrarProductos?page=${pagina}&limit=${registrosPorPagina}`;
             fetch(url)
                 .then(response => {
                     if (response.ok) return response.json();
