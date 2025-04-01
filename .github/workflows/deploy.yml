@@ -60,32 +60,12 @@ jobs:
             Frontend/dist/
             package.json
 
-      - name: Deploy to Railway
-        if: github.ref == 'refs/heads/main'
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+      - name: Deploy via Railway API
         run: |
-          # Instalar CLI globalmente
-          npm install -g @railway/cli
-          
-          # Crear directorio de configuración
-          mkdir -p ~/.railway
-          
-          # Crear archivo de configuración con token y project ID
-          cat > ~/.railway/config.json <<EOF
-          {
-            "token": "$RAILWAY_TOKEN",
-            "projectId": "$RAILWAY_PROJECT_ID",
-            "teamId": null
-          }
-          EOF
-          
-          # Verificar conexión
-          railway whoami
-          
-          # Realizar despliegue
-          railway up --service backend --environment production
+          curl -X POST "https://api.railway.app/v1/projects/${{ secrets.RAILWAY_PROJECT_ID }}/deployments" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"serviceId":"backend"}'
 
       - name: Send Email Notification
         if: always()
