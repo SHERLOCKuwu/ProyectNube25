@@ -83,7 +83,26 @@
         let registrosPorPagina = 5;
 
         function cargarTabla() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html'; // Redirigir si no hay token
+                return;
+            }
+
             const url = `https://proyectnube25-production-e6e4.up.railway.app/administrarProductos?page=${pagina}&limit=${registrosPorPagina}`;
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (response.ok) return response.json();
+                if (response.status === 401) {
+                    window.location.href = 'login.html';
+                }
+                throw new Error('Error en la respuesta del servidor');
+            })
+            
             fetch(url)
                 .then(response => {
                     if (response.ok) return response.json();
