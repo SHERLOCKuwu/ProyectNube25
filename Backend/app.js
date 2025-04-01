@@ -6,7 +6,7 @@ const URL_CONNECT = process.env.URL_CONNECT;
 const PORT = process.env.PORT;
 
 const productoRoutes = require('./routes/productoRoutes');
-const authRoutes = require('./Backend/routes/AuthRoutes');
+const authRoutes = require('./routes/AuthRoutes');
 const tipoProductoRoutes = require('./routes/TipoProductoRoutes');
 const cors = require('cors');
 const path = require('path');
