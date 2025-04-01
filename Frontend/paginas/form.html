@@ -10,7 +10,22 @@
     <link rel="stylesheet" href="../estilos/animaciones.css">
     <link rel="icon" href="../imagenes/logo12.png" type="image/png">
     <style>
-       
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -28,7 +43,6 @@
         <a class="nav-link" href="upload.html">Cargar Archivo </a>
     </nav>
 
-    
     <div class="container-fluid text-center">
         <img src="../imagenes/logo11.png" class="img-fluid rounded" alt="Logo de Miel Dorada" style="max-width: 15%;">
     </div>
@@ -41,7 +55,7 @@
                     <h1 class="display-3 text-center mb-4">Formulario de Productos</h1>
 
                     <div class="content">
-                        <form>
+                        <form id="productForm">
                             <div class="form-group">
                                 <label for="Id">ID:</label>
                                 <input type="text" id="Id" name="Id" disabled class="form-control">
@@ -56,15 +70,15 @@
                             </div>
                             <div class="form-group">
                                 <label for="Precio">Precio:</label>
-                                <input type="text" id="Precio" name="Precio" required class="form-control">
+                                <input type="number" id="Precio" name="Precio" step="0.01" required class="form-control">
                             </div>
                             <div class="form-group">
                                 <label for="FechaCaducidad">Fecha de Caducidad:</label>
-                                <input type="date" id="FechaCaducidad" name="FechaCaducidad" required class="form-control">
+                                <input type="date" id="FechaCaducidad" name="FechaCaducidad" class="form-control">
                             </div>
                             <div class="form-group">
                                 <label for="Stock">Stock:</label>
-                                <input type="number" id="Stock" name="Stock" required class="form-control">
+                                <input type="number" id="Stock" name="Stock" min="0" class="form-control">
                             </div>
                             <div id="contenedor-error" class="text-danger mt-2"></div>
                             <button type="submit" class="btn btn-primary btn-block custom-btn">Aceptar</button>
@@ -84,96 +98,136 @@
         <p>&copy; 2025 Miel Dorada. Todos los derechos reservados.</p>
     </div>
 
-   
     <script src="../js/jquery-3.2.1.slim.min.js"></script>
     <script src="../js/popper.min.js"></script>
     <script src="../js/bootstrap.min.js"></script>
     <script>
+        // Obtener parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const id = urlParams.get('id');
         const mode = urlParams.get('Mode');
-
+    
+        // Verificar autenticación
         const token = localStorage.getItem('token');
         if (!token) {
             window.location.href = './login.html';
+            throw new Error('No autenticado');
         }
-
-        const URL = `https://proyectnube25-production-e6e4.up.railway.app/productos/${id}`;
-        const form = document.querySelector('form');
-        const IdInput = document.querySelector('#Id');
-        const NombreInput = document.querySelector('#Nombre');
-        const TipoInput = document.querySelector('#Tipo');
-        const PrecioInput = document.querySelector('#Precio');
-        const FechaCaducidadInput = document.querySelector('#FechaCaducidad');
-        const StockInput = document.querySelector('#Stock');
-        const contenedorError = document.querySelector('#contenedor-error');
-        const mensajeDiv = document.querySelector('#mensaje');
-
-        let MetodoHTTP = mode === 'INS' ? 'POST' : mode === 'UPD' ? 'PUT' : 'DELETE';
-
-        if (mode === 'UPD' || mode === 'DLT') {
-            fetch(URL)
-                .then(response => {
-                    if (!response.ok) throw new Error('La respuesta no es satisfactoria');
-                    return response.json();
-                })
-                .then(data => {
-                    IdInput.value = data._id || '';
-                    NombreInput.value = data.nombre || '';
-                    TipoInput.value = data.tipo || '';
-                    PrecioInput.value = data.precio || '';
-                    FechaCaducidadInput.value = data.fechaCaducidad?.split('T')[0] || '';
-                    StockInput.value = data.stock || '';
-                })
-                .catch(err => console.error(err));
+    
+        // Configurar URL según el modo
+        const BASE_URL = 'https://proyectnube25-production-e6e4.up.railway.app/producto';
+        const URL = mode === 'INS' ? BASE_URL : `${BASE_URL}/${id}`;
+        const MetodoHTTP = mode === 'INS' ? 'POST' : 'PUT';
+    
+        // Elementos del formulario
+        const form = document.getElementById('productForm');
+        const IdInput = document.getElementById('Id');
+        const NombreInput = document.getElementById('Nombre');
+        const TipoInput = document.getElementById('Tipo');
+        const PrecioInput = document.getElementById('Precio');
+        const FechaCaducidadInput = document.getElementById('FechaCaducidad');
+        const StockInput = document.getElementById('Stock');
+        const mensajeDiv = document.getElementById('mensaje');
+    
+        // Cargar datos si es edición
+        if (mode === 'UPD' && id) {
+            fetch(URL, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Error al cargar el producto');
+                return response.json();
+            })
+            .then(data => {
+                IdInput.value = data._id || '';
+                NombreInput.value = data.nombre || '';
+                TipoInput.value = data.tipo || '';
+                PrecioInput.value = data.precio || '';
+                
+                if (data.fechaCaducidad) {
+                    const fecha = new Date(data.fechaCaducidad);
+                    FechaCaducidadInput.value = fecha.toISOString().split('T')[0];
+                }
+                
+                StockInput.value = data.stock || '';
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                mostrarMensaje('Error al cargar el producto: ' + err.message, 'error');
+            });
         }
-
-        // Función para mostrar el mensaje
+    
+        // Función para mostrar mensajes
         function mostrarMensaje(mensaje, tipo) {
             mensajeDiv.textContent = mensaje;
             mensajeDiv.style.display = 'block';
-            mensajeDiv.classList.remove('alert-success', 'alert-danger');  
-            mensajeDiv.classList.add(tipo === 'success' ? 'alert-success' : 'alert-danger'); 
+            mensajeDiv.className = `alert alert-${tipo}`;
         }
-
-        form.addEventListener('submit', e => {
-            e.preventDefault();
-
+    
+        // Validar formulario
+        function validarFormulario() {
             const nombre = NombreInput.value.trim();
             const tipo = TipoInput.value.trim();
-            const precio = parseFloat(PrecioInput.value.trim());
-            const fechaCaducidad = FechaCaducidadInput.value;
-            const stock = parseInt(StockInput.value.trim(), 10);
-
-            if (!nombre || !tipo || isNaN(precio) || !fechaCaducidad || isNaN(stock)) {
-                contenedorError.textContent = 'Todos los campos deben ser completados correctamente.';
-                return;
+            const precio = parseFloat(PrecioInput.value);
+            
+            if (!nombre || !tipo || isNaN(precio)) {
+                mostrarMensaje('Nombre, tipo y precio son campos obligatorios', 'error');
+                return false;
             }
-
-            fetch(URL, {
-                method: MetodoHTTP,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ nombre, tipo, precio, fechaCaducidad, stock })
-            })
-                .then(response => {
-                    if (!response.ok) throw new Error('La respuesta no fue correcta!');
-                    return response.json();
-                })
-                .then(() => {
-                    mostrarMensaje('Operación realizada con éxito.', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'administrarProductos.html';
-                    }, 1000);  
-                })
-                .catch(err => {
-                    console.error('Error:', err);
-                    mostrarMensaje('Hubo un error: ' + err.message, 'error');
+            
+            if (precio <= 0) {
+                mostrarMensaje('El precio debe ser mayor que cero', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+    
+        // Manejar envío del formulario
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validarFormulario()) return;
+    
+            const producto = {
+                nombre: NombreInput.value.trim(),
+                tipo: TipoInput.value.trim(),
+                precio: parseFloat(PrecioInput.value),
+                fechaCaducidad: FechaCaducidadInput.value || undefined,
+                stock: StockInput.value ? parseInt(StockInput.value) : undefined
+            };
+    
+            try {
+                const response = await fetch(URL, {
+                    method: MetodoHTTP,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(producto)
                 });
+    
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Error en la operación');
+                }
+    
+                const data = await response.json();
+                mostrarMensaje(
+                    mode === 'INS' ? 'Producto creado con éxito' : 'Producto actualizado con éxito', 
+                    'success'
+                );
+                
+                setTimeout(() => {
+                    window.location.href = 'administrarProductos.html';
+                }, 1500);
+            } catch (err) {
+                console.error('Error:', err);
+                mostrarMensaje(err.message || 'Hubo un error al procesar la solicitud', 'error');
+            }
         });
     </script>
 </body>
-
 </html>

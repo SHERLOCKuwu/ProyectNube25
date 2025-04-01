@@ -1,218 +1,246 @@
 const productoMiel = require('../models/productoMiel');
-const TipoProducto = require('../models/TipoProducto');
 const path = require('path');
-const fs = require('fs'); 
+const fs = require('fs');
 const mongoose = require('mongoose');
-
 
 // Crear un nuevo producto de miel
 exports.createproductoMiel = async (req, res) => {
     try {
         const { nombre, tipo, precio, fechaCaducidad, stock } = req.body;
 
-        
-        if (!nombre || !tipo || !precio ) {
-            return res.status(400).send("Faltan campos obligatorios");
+        // Validación mejorada
+        if (!nombre || !tipo || !precio) {
+            return res.status(400).json({ 
+                message: "Nombre, tipo y precio son campos obligatorios" 
+            });
         }
 
-        
-        
+        if (isNaN(precio) || precio <= 0) {
+            return res.status(400).json({
+                message: "El precio debe ser un número positivo"
+            });
+        }
 
-        
-        
+        if (stock && (isNaN(stock) || stock < 0)) {
+            return res.status(400).json({
+                message: "El stock debe ser un número positivo o cero"
+            });
+        }
 
         const nuevoProductoMiel = new productoMiel({
             nombre,
             tipo,
-           // cantidad,
             precio,
-            //urlImagen,
-            //descripcion,
-            fechaCaducidad,
-            stock,
-            //ID_tipoProducto
+            fechaCaducidad: fechaCaducidad || undefined,
+            stock: stock || undefined
         });
 
         const productoGuardado = await nuevoProductoMiel.save();
-        res.status(201).send(productoGuardado);
+        res.status(201).json({
+            message: "Producto creado exitosamente",
+            producto: productoGuardado
+        });
     } catch (err) {
         console.error("Error en createproductoMiel: ", err);
-        res.status(500).send("Error en el servidor");
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
 };
 
-
-
-
-// Obtener todos los productos de miel
+// Obtener todos los productos de miel con paginación
 exports.getAllproductoMielPaginacion = async (req, res) => {
     try {
-        
-        const { page = 3, limit = 5, nombre } = req.query;
-
-       
+        const { page = 1, limit = 5, nombre } = req.query;
         const filter = {};
-        if (nombre) filter.nombre = { $regex: nombre, $options: 'i' }; 
-        //if (tipo) filter.tipo = { $regex: tipo, $options: 'i' };
-
         
-        const productosMiel = await productoMiel
-            .find(filter)
-            //.populate('ID_tipoProducto')
-            .skip((page - 1) * limit) 
-            .limit(parseInt(limit)); 
+        if (nombre) filter.nombre = { $regex: nombre, $options: 'i' };
 
-       
+        const productosMiel = await productoMiel.find(filter)
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
         const total = await productoMiel.countDocuments(filter);
 
-        res.status(200).send({
+        res.status(200).json({
             total,
             page: parseInt(page),
             limit: parseInt(limit),
+            totalPages: Math.ceil(total / limit),
             productos: productosMiel,
         });
     } catch (err) {
-        console.error("Error en getAllproductoMiel: ", err);
-        res.status(500).send("Error en el servidor");
+        console.error("Error en getAllproductoMielPaginacion: ", err);
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
 };
 
+// Obtener todos los productos sin paginación
 exports.getAllproductoMiel = async (req, res) => {
     try {
-        const productosMiel = await productoMiel.find()//.populate('ID_tipoProducto'); 
-        res.status(200).send(productosMiel);
+        const productosMiel = await productoMiel.find();
+        res.status(200).json(productosMiel);
     } catch (err) {
         console.error("Error en getAllproductoMiel: ", err);
-        res.status(500).send("Error en el servidor");
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
 };
 
-
-// Obtener un producto de miel por su ID
+// Obtener un producto por su ID
 exports.getproductoMielById = async (req, res) => {
     try {
         const { id } = req.params;
-        const producto = await productoMiel.findById(id)//.populate('tipoProducto'); 
-        if (producto) {
-            res.status(200).send(producto);
-        } else {
-            res.status(404).send("No se encontró un registro con el Id enviado");
+        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "ID no válido" });
         }
+
+        const producto = await productoMiel.findById(id);
+        if (!producto) {
+            return res.status(404).json({ message: "Producto no encontrado" });
+        }
+        
+        res.status(200).json(producto);
     } catch (err) {
         console.error("Error en getproductoMielById: ", err);
-        res.status(500).send("Error en el servidor");
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
 };
 
-
-// Actualizar un producto de miel por su ID
+// Actualizar un producto por su ID
 exports.updateproductoMiel = async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, tipo, precio, fechaCaducidad, stock } = req.body;
 
-        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "ID no válido" });
+        }
+
+        // Validación mejorada
         if (!nombre || !tipo || !precio) {
-            return res.status(400).send("Faltan campos obligatorios");
+            return res.status(400).json({ 
+                message: "Nombre, tipo y precio son campos obligatorios" 
+            });
         }
 
-       
-
-        
-       
-
-        const productoMielActualizado = {
-            nombre,
-            tipo,
-           // cantidad,
-            precio,
-            //urlImagen,
-            //descripcion,
-            fechaCaducidad,
-            stock,
-           // ID_tipoProducto
-        };
-
-        const updatedProductoMiel = await productoMiel.findByIdAndUpdate(id, productoMielActualizado, { new: true });
-        if (updatedProductoMiel) {
-            res.status(200).send(updatedProductoMiel);
-        } else {
-            res.status(404).send("No se encontró un registro con el Id enviado");
+        if (isNaN(precio) || precio <= 0) {
+            return res.status(400).json({
+                message: "El precio debe ser un número positivo"
+            });
         }
+
+        if (stock && (isNaN(stock) || stock < 0)) {
+            return res.status(400).json({
+                message: "El stock debe ser un número positivo o cero"
+            });
+        }
+
+        const productoActualizado = await productoMiel.findByIdAndUpdate(
+            id,
+            {
+                nombre,
+                tipo,
+                precio,
+                fechaCaducidad: fechaCaducidad || undefined,
+                stock: stock || undefined
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!productoActualizado) {
+            return res.status(404).json({ message: "Producto no encontrado" });
+        }
+
+        res.status(200).json({
+            message: "Producto actualizado exitosamente",
+            producto: productoActualizado
+        });
     } catch (err) {
         console.error("Error en updateproductoMiel: ", err);
-        res.status(500).send("Error en el servidor");
-       
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
 };
 
-// Eliminar un producto de miel por su ID, solo admin
+// Eliminar un producto por su ID
 exports.deleteproductoMiel = async (req, res) => {
     try {
         const { id } = req.params;
 
-        
-        
-
-        const deletedProductoMiel = await productoMiel.findByIdAndDelete(id);
-        if (deletedProductoMiel) {
-            res.status(200).send({ message: "Producto eliminado con éxito", deletedProductoMiel });
-        } else {
-            res.status(404).send("No se encontró un registro con el Id enviado");
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "ID no válido" });
         }
+
+        const productoEliminado = await productoMiel.findByIdAndDelete(id);
+        if (!productoEliminado) {
+            return res.status(404).json({ message: "Producto no encontrado" });
+        }
+
+        res.status(200).json({
+            message: "Producto eliminado exitosamente",
+            producto: productoEliminado
+        });
     } catch (err) {
         console.error("Error en deleteproductoMiel: ", err);
-        res.status(500).send("Error en el servidor");
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
-
-  
-   
-    
 };
 
-
-
+// Subir archivo/imagen para un producto
 exports.uploadFile = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Verificar si se subió un archivo
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "ID no válido" });
+        }
+
         if (!req.file) {
             return res.status(400).json({ message: "No se subió ningún archivo" });
         }
 
-        // Verificar si el archivo es una imagen
         const fileExtension = path.extname(req.file.originalname).toLowerCase();
         const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp'];
         if (!allowedExtensions.includes(fileExtension)) {
-            return res.status(400).json({ message: "El archivo no es una imagen válida. Solo se permiten archivos PNG, JPG, JPEG, GIF, BMP." });
+            return res.status(400).json({ 
+                message: "Solo se permiten imágenes (PNG, JPG, JPEG, GIF, BMP)" 
+            });
         }
 
-        // Renombrar el archivo con el ID del producto
         const newFileName = `${id}${fileExtension}`;
-
-        // Ruta del directorio de carga
         const uploadDir = path.join(__dirname, '..', 'uploads');
         const newFilePath = path.join(uploadDir, newFileName);
 
-        // Verificar si el directorio existe; si no, crearlo
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        // Renombrar y mover el archivo
         fs.renameSync(req.file.path, newFilePath);
 
-        // Detalles del archivo con el nuevo nombre
         const fileDetails = {
             Nombre_Archivo: newFileName,
             MimeType: req.file.mimetype,
             Size: req.file.size,
-            Ruta: path.join('uploads', newFileName), // Ruta relativa
+            Ruta: path.join('uploads', newFileName),
         };
 
-        // Actualizar el producto con la nueva ruta de la imagen
-        const updatedProducto = await productoMiel.findByIdAndUpdate(
+        const productoActualizado = await productoMiel.findByIdAndUpdate(
             id,
             {
                 urlImagen: fileDetails.Ruta,
@@ -221,54 +249,45 @@ exports.uploadFile = async (req, res) => {
             { new: true }
         );
 
-        // Validar si el producto fue encontrado y actualizado
-        if (!updatedProducto) {
+        if (!productoActualizado) {
+            // Eliminar el archivo si no se pudo actualizar el producto
+            fs.unlinkSync(newFilePath);
             return res.status(404).json({ message: "Producto no encontrado" });
         }
 
-        // Responder con éxito
         res.status(200).json({
             message: "Archivo subido exitosamente",
-            producto: updatedProducto,
+            producto: productoActualizado,
+            file: fileDetails
         });
     } catch (err) {
         console.error("Error al subir el archivo:", err);
-        res.status(500).json({ message: "Error en el servidor" });
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
 };
 
-
+// Obtener archivos subidos
 exports.getUploadedFiles = async (req, res) => {
     try {
-        // Recuperar todos los productos desde la base de datos
-        const productos = await productoMiel.find();
+        const productos = await productoMiel.find({ file: { $exists: true } })
+            .select('_id nombre file');
 
-        // Filtrar productos con archivos subidos
-        const archivos = productos
-            .filter((producto) => producto.file) // Productos que tienen un archivo asociado
-            .map((producto) => ({
-                id: producto._id,
-                nombre: producto.Nombre_Producto,
-                archivo: producto.file, // Detalles del archivo
-            }));
-
-        if (archivos.length === 0) {
-            return res.status(404).send("No hay archivos subidos");
+        if (productos.length === 0) {
+            return res.status(404).json({ message: "No hay archivos subidos" });
         }
 
-        res.status(200).send({
-            message: "Archivos subidos encontrados",
-            archivos,
+        res.status(200).json({
+            count: productos.length,
+            archivos: productos
         });
     } catch (err) {
         console.error("Error al recuperar archivos: ", err);
-        res.status(500).send("Error en el servidor");
+        res.status(500).json({ 
+            message: "Error en el servidor",
+            error: err.message 
+        });
     }
 };
-
-
-// Registrar el endpoint en Express
-
-
-
-
