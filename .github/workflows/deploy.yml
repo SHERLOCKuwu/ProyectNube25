@@ -104,16 +104,28 @@ jobs:
 
       - name: Send Teams Notification
         if: always()
-        uses: aliencube/microsoft-teams-actions@v1.1.3
-        with:
-          webhook_uri: ${{ secrets.TEAMS_WEBHOOK_URI }}
-          status: ${{ job.status }}
-          title: "Despliegue Miel Dorada"
-          summary: "Resultado del despliegue"
-          text: |
-            **Estado:** ${{ job.status }}
-            **Repositorio:** ${{ github.repository }}
-            **Rama:** ${{ github.ref }}
-            **Ejecución:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            **Hora:** ${{ github.run_attempt }}
-          theme_color: ${{ job.status == 'success' && '2EB886' || 'A30200' }}
+        run: |
+          MESSAGE=$(cat <<EOF
+          {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "themeColor": "${{ job.status == 'success' && '2EB886' || 'A30200' }}",
+            "summary": "Resultado del despliegue Miel Dorada",
+            "title": "Despliegue Miel Dorada - ${{ job.status }}",
+            "text": "**Estado:** ${{ job.status }}<br>**Repositorio:** ${{ github.repository }}<br>**Rama:** ${{ github.ref }}<br>**Ejecución:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
+            "potentialAction": [{
+              "@type": "OpenUri",
+              "name": "Ver Detalles",
+              "targets": [{
+                "os": "default",
+                "uri": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }]
+            }]
+          }
+          EOF
+          )
+          
+          curl -X POST \
+            "${{ secrets.TEAMS_WEBHOOK_URI }}" \
+            -H "Content-Type: application/json" \
+            -d "$MESSAGE"
