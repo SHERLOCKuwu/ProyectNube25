@@ -67,57 +67,39 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"serviceId":"backend"}'
 
-      - name: Send Email Notification
-        if: always()
-        run: |
-          curl -X POST \
-            "https://api.sendgrid.com/v3/mail/send" \
-            -H "Authorization: Bearer ${{ secrets.SENDGRID_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "personalizations": [{
-                "to": [{"email": "${{ secrets.NOTIFICATION_EMAIL }}"}],
-                "subject": "Resultado del despliegue: ${{ job.status }}"
-              }],
-              "from": {"email": "noreply@miempresa.com"},
-              "content": [{
-                "type": "text/plain",
-                "value": "El despliegue de Miel Dorada ha ${{ job.status }}\n\nDetalles:\n- Repositorio: ${{ github.repository }}\n- Rama: ${{ github.ref }}\n- Ejecución: ${{ github.run_id }}\n\nVer detalles: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-              }]
-            }'
-
       - name: Send Teams Notification
         if: always()
         run: |
-          if [[ ! "${{ secrets.TEAMS_WEBHOOK_URI }}" =~ ^https://.*\.webhook\.office\.com ]]; then
-            echo "⚠️ Webhook URI no válido"
-            exit 0
+          # Configuración del mensaje
+          if [ "${{ job.status }}" == "success" ]; then
+            COLOR="2EB886"
+            EMOJI="✅"
+            STATUS_TEXT="ÉXITO"
+          else
+            COLOR="A30200"
+            EMOJI="❌"
+            STATUS_TEXT="FALLO"
           fi
-          
+
+          # Crear payload JSON
           JSON_PAYLOAD=$(jq -n \
             --arg status "${{ job.status }}" \
             --arg repo "${{ github.repository }}" \
-            --arg branch "${{ github.ref }}" \
             --arg run_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            --arg run_number "${{ github.run_number }}" \
-            --arg color "$(if [ "${{ job.status }}" == "success" ]; then echo "2EB886"; else echo "A30200"; fi)" \
             '{
               "@type": "MessageCard",
               "@context": "http://schema.org/extensions",
-              "themeColor": $color,
-              "summary": "Resultado del despliegue Miel Dorada",
-              "title": "Despliegue Miel Dorada - \($status)",
-              "text": "**Estado:** \($status)<br>**Repositorio:** \($repo)<br>**Rama:** \($branch)<br>**Ejecución:** [\($run_number)](\($run_url))",
+              "themeColor": "'"$COLOR"'",
+              "title": "'"$EMOJI Despliegue de $repo - $STATUS_TEXT $EMOJI"'",
+              "text": "**Estado:** $STATUS_TEXT<br>**Repositorio:** $repo<br>**Ejecución:** [Ver detalles]($run_url)",
               "potentialAction": [{
                 "@type": "OpenUri",
-                "name": "Ver Detalles",
-                "targets": [{
-                  "os": "default",
-                  "uri": $run_url
-                }]
+                "name": "Ver detalles del despliegue",
+                "targets": [{ "os": "default", "uri": "'"$run_url"'" }]
               }]
             }')
-          
+
+          # Enviar notificación
           curl -X POST \
             "${{ secrets.TEAMS_WEBHOOK_URI }}" \
             -H "Content-Type: application/json" \
