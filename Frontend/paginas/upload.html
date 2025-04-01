@@ -97,8 +97,8 @@
             formData.append('productName', productName);
 
             try {
-                // Enviar los datos al servidor 
-                const response = await fetch('http://localhost:3001/productoMiel/' + productId + '/upload', {
+                // Enviar los datos al servidor en Railway
+                const response = await fetch('https://proyectnube25-production-e6e4.up.railway.app/productoMiel/' + productId + '/upload', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + token
@@ -110,18 +110,14 @@
 
                 if (response.ok) {
                     document.getElementById('message').innerHTML = '<div class="alert alert-success">Imagen subida exitosamente</div>';
-
                     document.getElementById('upload-form').reset();
                 } else {
                     document.getElementById('message').innerHTML = '<div class="alert alert-danger">Error: ' + result.message + '</div>';
-
                     document.getElementById('upload-form').reset();
                 }
             } catch (error) {
                 console.error('Error al subir la imagen:', error);
-               // document.getElementById('message').innerHTML = '<div class="alert alert-danger">Error en el servidor</div>';
-                document.getElementById('message').innerHTML = '<div class="alert alert-danger">Error en el servidor<br>PD inválido o no encontrado</div>';
-
+                document.getElementById('message').innerHTML = '<div class="alert alert-danger">Error en el servidor<br>ID inválido o no encontrado</div>';
                 document.getElementById('upload-form').reset();
             }
         });
