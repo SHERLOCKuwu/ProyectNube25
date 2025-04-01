@@ -92,29 +92,33 @@ exports.authorizeAdmin = (req, res, next) => {
 };
 
 
-exports.authenticate = (req, res, next) =>{
+exports.authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    if(!authHeader){
-        res.status(401).send('Falta el token de Autenticación');
-        return;
+    
+    if (!authHeader) {
+        return res.status(401).json({ 
+            success: false,
+            message: 'Token de autenticación requerido' 
+        });
     }
 
-    const[type, token] = authHeader.split(' ');
+    const [type, token] = authHeader.split(' ');
 
-    if(type !== "Bearer"){
-        res.status(401).send('Tipo de Token no es válido');
-        return;
+    if (type !== "Bearer" || !token) {
+        return res.status(401).json({ 
+            success: false,
+            message: 'Formato de token inválido' 
+        });
     }
 
-    try{
+    try {
         const decoded = jwt.verify(token, SECRET_KEY);
-        console.log(decoded);
         req.user = decoded;
         next();
-    }catch{
-        res.status(401).send('Token Invalido');
-        return;
+    } catch (err) {
+        return res.status(401).json({ 
+            success: false,
+            message: 'Token inválido o expirado' 
+        });
     }
-}
-
-
+};
