@@ -81,8 +81,7 @@ jobs:
           environment: production
           command: npm start
 
-
-        - name: Send Email Notification
+      - name: Send Email Notification
         if: always() # Se ejecuta siempre, incluso si falla
         run: |
           curl -X POST \
@@ -104,7 +103,6 @@ jobs:
                 }
               ]
             }'
-
 
       - name: Send Teams Notification
         if: always()
