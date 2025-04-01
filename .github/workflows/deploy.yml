@@ -76,7 +76,7 @@ jobs:
       - name: Deploy to Railway
         if: github.ref == 'refs/heads/main'
         run: |
-          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          echo "${{ secrets.RAILWAY_TOKEN }}" | railway login
           railway up --service backend --environment production
 
       - name: Send Email Notification
@@ -105,27 +105,22 @@ jobs:
       - name: Send Teams Notification
         if: always()
         run: |
-          MESSAGE=$(cat <<EOF
-          {
-            "@type": "MessageCard",
-            "@context": "http://schema.org/extensions",
-            "themeColor": "${{ job.status == 'success' && '2EB886' || 'A30200' }}",
-            "summary": "Resultado del despliegue Miel Dorada",
-            "title": "Despliegue Miel Dorada - ${{ job.status }}",
-            "text": "**Estado:** ${{ job.status }}<br>**Repositorio:** ${{ github.repository }}<br>**Rama:** ${{ github.ref }}<br>**Ejecución:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
-            "potentialAction": [{
-              "@type": "OpenUri",
-              "name": "Ver Detalles",
-              "targets": [{
-                "os": "default",
-                "uri": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-              }]
-            }]
-          }
-          EOF
-          )
-          
           curl -X POST \
             "${{ secrets.TEAMS_WEBHOOK_URI }}" \
             -H "Content-Type: application/json" \
-            -d "$MESSAGE"
+            -d '{
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "themeColor": "'"${{ job.status == 'success' && '2EB886' || 'A30200' }}"'",
+              "summary": "Resultado del despliegue Miel Dorada",
+              "title": "Despliegue Miel Dorada - '"${{ job.status }}"'",
+              "text": "**Estado:** '"${{ job.status }}"'<br>**Repositorio:** '"${{ github.repository }}"'<br>**Rama:** '"${{ github.ref }}"'<br>**Ejecución:** [#'"${{ github.run_number }}"']('"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"')",
+              "potentialAction": [{
+                "@type": "OpenUri",
+                "name": "Ver Detalles",
+                "targets": [{
+                  "os": "default",
+                  "uri": "'"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"'"
+                }]
+              }]
+            }'
