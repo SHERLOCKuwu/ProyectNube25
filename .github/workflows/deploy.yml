@@ -26,8 +26,6 @@ jobs:
 
       - name: Install dependencies
         env:
-          NEW_RELIC_APP_NAME: "ProyectNube25-CI"
-          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
           URL_CONNECT: ${{ secrets.URL_CONNECT }}
         run: |
           npm ci
@@ -55,16 +53,15 @@ jobs:
             [ -d "$folder" ] && cp -r "$folder" dist/
           done
 
-      - name: Configure New Relic Frontend
-        run: |
-          if [ -d "Frontend/dist" ]; then
-            find Frontend/dist -name '*.html' -print0 | xargs -0 sed -i "/<head>/a <script>window.NREUM||(NREUM={});NREUM.info={applicationID:'${{ secrets.NEW_RELIC_BROWSER_APP_ID }}',licenseKey:'${{ secrets.NEW_RELIC_BROWSER_KEY }}',env:'production'}</script>"
-          fi
+      # Comentado temporalmente - Configuración New Relic
+      # - name: Configure New Relic Frontend
+      #   run: |
+      #     if [ -d "Frontend/dist" ]; then
+      #       find Frontend/dist -name '*.html' -print0 | xargs -0 sed -i "/<head>/a <script>window.NREUM||(NREUM={});NREUM.info={applicationID:'${{ secrets.NEW_RELIC_BROWSER_APP_ID }}',licenseKey:'${{ secrets.NEW_RELIC_BROWSER_KEY }}',env:'production'}</script>"
+      #     fi
 
       - name: Deploy via Railway API
         env:
-          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
-          NEW_RELIC_APP_NAME: "ProyectNube25-Prod"
           URL_CONNECT: ${{ secrets.URL_CONNECT }}
         run: |
           curl -X POST "https://api.railway.app/v1/projects/${{ secrets.RAILWAY_PROJECT_ID }}/deployments" \
@@ -73,8 +70,6 @@ jobs:
             -d '{
               "serviceId": "backend",
               "variables": {
-                "NEW_RELIC_LICENSE_KEY": "'"$NEW_RELIC_LICENSE_KEY"'",
-                "NEW_RELIC_APP_NAME": "'"$NEW_RELIC_APP_NAME"'",
                 "URL_CONNECT": "'"$URL_CONNECT"'",
                 "NODE_ENV": "production"
               }
