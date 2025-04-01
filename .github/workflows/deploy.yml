@@ -51,6 +51,32 @@ jobs:
             [ -d "$folder" ] && cp -r "$folder" dist/
           done
 
+      - name: Configure New Relic Monitoring
+        run: |
+          # Configuración dinámica del entorno
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ENV="Prod"
+            echo "NEW_RELIC_LOG_LEVEL=info" >> $GITHUB_ENV
+          else
+            ENV="Dev"
+            echo "NEW_RELIC_LOG_LEVEL=trace" >> $GITHUB_ENV
+          fi
+
+          echo "NEW_RELIC_APP_NAME=ProyectNube25-$ENV" >> $GITHUB_ENV
+          echo "NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }}" >> $GITHUB_ENV
+          echo "NEW_RELIC_NO_CONFIG_FILE=true" >> $GITHUB_ENV
+          
+          # Inyección solo si existe el directorio dist
+          if [ -d "Frontend/dist" ]; then
+            # HTML
+            find Frontend/dist -name '*.html' -print0 | xargs -0 sed -i "/<head>/a <script>window.NREUM||(NREUM={});NREUM.info={applicationID:'${{ secrets.NEW_RELIC_BROWSER_APP_ID }}',licenseKey:'${{ secrets.NEW_RELIC_BROWSER_KEY }}',env:'$ENV'}</script>"
+            
+            # JavaScript (más robusto con xargs)
+            find Frontend/dist -name '*.js' -print0 | xargs -0 sed -i "1i //@newrelic"
+          fi
+          
+          echo "✅ New Relic configurado para $ENV"
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -61,11 +87,20 @@ jobs:
             package.json
 
       - name: Deploy via Railway API
+        env:
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+          NEW_RELIC_APP_NAME: ${{ env.NEW_RELIC_APP_NAME }}
         run: |
           curl -X POST "https://api.railway.app/v1/projects/${{ secrets.RAILWAY_PROJECT_ID }}/deployments" \
             -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"serviceId":"backend"}'
+            -d '{
+              "serviceId": "backend",
+              "variables": {
+                "NEW_RELIC_LICENSE_KEY": "'"$NEW_RELIC_LICENSE_KEY"'",
+                "NEW_RELIC_APP_NAME": "'"$NEW_RELIC_APP_NAME"'"
+              }
+            }'
 
       - name: Send Teams Notification
         if: always()
@@ -73,7 +108,6 @@ jobs:
           REPO_NAME: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          # Configurar emojis y colores según estado
           if [ "${{ job.status }}" == "success" ]; then
             COLOR="2EB886"
             EMOJI="✅"
@@ -84,34 +118,21 @@ jobs:
             STATUS_TEXT="FALLO"
           fi
 
-          # Crear el JSON correctamente escapado
-          JSON_PAYLOAD=$(cat <<EOF
-          {
-            "@type": "MessageCard",
-            "@context": "http://schema.org/extensions",
-            "themeColor": "$COLOR",
-            "title": "$EMOJI Despliegue $REPO_NAME - $STATUS_TEXT $EMOJI",
-            "text": "**Estado:** $STATUS_TEXT\n\n**Repositorio:** $REPO_NAME\n\n**Ejecución:** [Ver detalles]($RUN_URL)",
-            "potentialAction": [{
-              "@type": "OpenUri",
-              "name": "Ver detalles del despliegue",
-              "targets": [{
-                "os": "default",
-                "uri": "$RUN_URL"
-              }]
-            }]
-          }
-          EOF
-          )
-
-          # Enviar la notificación
           curl -X POST \
             "${{ secrets.TEAMS_WEBHOOK_URI }}" \
             -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD"
-            
-      - name: Deploy to Railway
-        uses: railwayapp/action@v1
-        env:
-          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
-          NEW_RELIC_APP_NAME: "ProyectNube25-${{ github.ref == 'refs/heads/main' && 'Prod' || 'Dev' }}"
+            -d '{
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "themeColor": "'"$COLOR"'",
+              "title": "'"$EMOJI Despliegue $REPO_NAME - $STATUS_TEXT $EMOJI"'",
+              "text": "**Estado:** '"$STATUS_TEXT"'\n\n**Repositorio:** '"$REPO_NAME"'\n\n**Ejecución:** [Ver detalles]('"$RUN_URL"')",
+              "potentialAction": [{
+                "@type": "OpenUri",
+                "name": "Ver detalles del despliegue",
+                "targets": [{
+                  "os": "default",
+                  "uri": "'"$RUN_URL"'"
+                }]
+              }]
+            }'
