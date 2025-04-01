@@ -109,3 +109,9 @@ jobs:
             "${{ secrets.TEAMS_WEBHOOK_URI }}" \
             -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD"
+            
+      - name: Deploy to Railway
+        uses: railwayapp/action@v1
+        env:
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+          NEW_RELIC_APP_NAME: "ProyectNube25-${{ github.ref == 'refs/heads/main' && 'Prod' || 'Dev' }}"
