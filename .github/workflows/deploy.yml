@@ -8,8 +8,7 @@ on:
 
 env:
   PORT: 3001
-  NODE_ENV: ci
-  NEW_RELIC_NO_CONFIG_FILE: true
+  NODE_ENV: production
 
 jobs:
   test-and-build:
@@ -19,13 +18,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-node-
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -34,32 +26,19 @@ jobs:
 
       - name: Install dependencies
         env:
-          NEW_RELIC_APP_NAME: "ProyectNube25-Install"
+          NEW_RELIC_APP_NAME: "ProyectNube25-CI"
           NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+          URL_CONNECT: ${{ secrets.URL_CONNECT }}
         run: |
           npm ci
+          npm update uuid open source-map-url resolve-url urix source-map-resolve
           npm audit fix --force
-
-      - name: Configure environment
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "ENV=Prod" >> $GITHUB_ENV
-            echo "NEW_RELIC_LOG_LEVEL=info" >> $GITHUB_ENV
-          else
-            echo "ENV=Dev" >> $GITHUB_ENV
-            echo "NEW_RELIC_LOG_LEVEL=trace" >> $GITHUB_ENV
-          fi
-          echo "NEW_RELIC_APP_NAME=ProyectNube25-${{ env.ENV }}" >> $GITHUB_ENV
-
-      - name: Install required tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
 
       - name: Run Backend Tests
         env:
-          DB_URL: ${{ secrets.DB_URL }}
+          URL_CONNECT: ${{ secrets.URL_CONNECT }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          NODE_ENV: test
         run: |
           if [ -f "Backend/test/*.test.js" ]; then
             npm test
@@ -79,26 +58,14 @@ jobs:
       - name: Configure New Relic Frontend
         run: |
           if [ -d "Frontend/dist" ]; then
-            # HTML
-            find Frontend/dist -name '*.html' -print0 | xargs -0 sed -i "/<head>/a <script>window.NREUM||(NREUM={});NREUM.info={applicationID:'${{ secrets.NEW_RELIC_BROWSER_APP_ID }}',licenseKey:'${{ secrets.NEW_RELIC_BROWSER_KEY }}',env:'${{ env.ENV }}'}</script>"
-            
-            # JavaScript
-            find Frontend/dist -name '*.js' -print0 | xargs -0 sed -i "1i //@newrelic"
+            find Frontend/dist -name '*.html' -print0 | xargs -0 sed -i "/<head>/a <script>window.NREUM||(NREUM={});NREUM.info={applicationID:'${{ secrets.NEW_RELIC_BROWSER_APP_ID }}',licenseKey:'${{ secrets.NEW_RELIC_BROWSER_KEY }}',env:'production'}</script>"
           fi
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: production-files
-          path: |
-            Backend/
-            Frontend/dist/
-            package.json
 
       - name: Deploy via Railway API
         env:
           NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
-          NEW_RELIC_APP_NAME: ${{ env.NEW_RELIC_APP_NAME }}
+          NEW_RELIC_APP_NAME: "ProyectNube25-Prod"
+          URL_CONNECT: ${{ secrets.URL_CONNECT }}
         run: |
           curl -X POST "https://api.railway.app/v1/projects/${{ secrets.RAILWAY_PROJECT_ID }}/deployments" \
             -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
@@ -108,7 +75,7 @@ jobs:
               "variables": {
                 "NEW_RELIC_LICENSE_KEY": "'"$NEW_RELIC_LICENSE_KEY"'",
                 "NEW_RELIC_APP_NAME": "'"$NEW_RELIC_APP_NAME"'",
-                "DB_URL": "'"${{ secrets.DB_URL }}"'",
+                "URL_CONNECT": "'"$URL_CONNECT"'",
                 "NODE_ENV": "production"
               }
             }'
