@@ -8,7 +8,6 @@ on:
 
 env:
   PORT: 3001
-  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
 jobs:
   test-and-build:
@@ -27,12 +26,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install jq (para JSON processing)
-        run: sudo apt-get install -y jq
-
-      - name: Install Railway CLI
-        if: github.ref == 'refs/heads/main'
-        run: npm install -g @railway/cli
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
 
       - name: Run Backend Tests
         env:
@@ -65,7 +62,22 @@ jobs:
 
       - name: Deploy to Railway
         if: github.ref == 'refs/heads/main'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
+          # Instalar CLI si no está presente
+          if ! command -v railway &> /dev/null; then
+            npm install -g @railway/cli
+          fi
+
+          # Configurar autenticación
+          echo "$RAILWAY_TOKEN" | railway login
+          
+          # Enlazar proyecto
+          railway link $RAILWAY_PROJECT_ID
+          
+          # Realizar despliegue
           railway up --service backend --environment production
 
       - name: Send Email Notification
