@@ -92,7 +92,7 @@ exports.authorizeAdmin = (req, res, next) => {
 };
 
 
-exports.aunthenticate = (req, res, next) =>{
+exports.authenticate = (req, res, next) =>{
     const authHeader = req.headers.authorization;
     if(!authHeader){
         res.status(401).send('Falta el token de Autenticación');
