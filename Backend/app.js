@@ -6,7 +6,7 @@ const URL_CONNECT = process.env.URL_CONNECT;
 const PORT = process.env.PORT;
 
 const productoRoutes = require('./routes/productoRoutes');
-const AuthRoutes = require('./routes/AuthRoutes');
+const authRoutes = require('./Backend/routes/AuthRoutes');
 const tipoProductoRoutes = require('./routes/TipoProductoRoutes');
 const cors = require('cors');
 const path = require('path');
@@ -32,7 +32,7 @@ app.use("/uploads", express.static("uploads"));
 
 // Rutas
 app.use('/api/productos', productoRoutes);
-app.use('/api/auth', AuthRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/tipos', tipoProductoRoutes);
 
 // Ruta principal

@@ -1,6 +1,11 @@
+const express = require('express');
+const router = express.Router();
 const auth = require('../auth/auth');
 
-module.exports = (app) =>{
-    app.post("/signup", auth.signUp);
-    app.post("/login", auth.login);
-}
+// Ruta de registro
+router.post("/signup", auth.signUp);
+
+// Ruta de login
+router.post("/login", auth.login);
+
+module.exports = router;
