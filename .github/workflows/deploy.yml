@@ -8,6 +8,8 @@ on:
 
 env:
   PORT: 3001
+  NODE_ENV: ci
+  NEW_RELIC_NO_CONFIG_FILE: true
 
 jobs:
   test-and-build:
@@ -17,6 +19,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -24,7 +33,23 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        env:
+          NEW_RELIC_APP_NAME: "ProyectNube25-Install"
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+        run: |
+          npm ci
+          npm audit fix --force
+
+      - name: Configure environment
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "ENV=Prod" >> $GITHUB_ENV
+            echo "NEW_RELIC_LOG_LEVEL=info" >> $GITHUB_ENV
+          else
+            echo "ENV=Dev" >> $GITHUB_ENV
+            echo "NEW_RELIC_LOG_LEVEL=trace" >> $GITHUB_ENV
+          fi
+          echo "NEW_RELIC_APP_NAME=ProyectNube25-${{ env.ENV }}" >> $GITHUB_ENV
 
       - name: Install required tools
         run: |
@@ -51,31 +76,15 @@ jobs:
             [ -d "$folder" ] && cp -r "$folder" dist/
           done
 
-      - name: Configure New Relic Monitoring
+      - name: Configure New Relic Frontend
         run: |
-          # Configuración dinámica del entorno
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            ENV="Prod"
-            echo "NEW_RELIC_LOG_LEVEL=info" >> $GITHUB_ENV
-          else
-            ENV="Dev"
-            echo "NEW_RELIC_LOG_LEVEL=trace" >> $GITHUB_ENV
-          fi
-
-          echo "NEW_RELIC_APP_NAME=ProyectNube25-$ENV" >> $GITHUB_ENV
-          echo "NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }}" >> $GITHUB_ENV
-          echo "NEW_RELIC_NO_CONFIG_FILE=true" >> $GITHUB_ENV
-          
-          # Inyección solo si existe el directorio dist
           if [ -d "Frontend/dist" ]; then
             # HTML
-            find Frontend/dist -name '*.html' -print0 | xargs -0 sed -i "/<head>/a <script>window.NREUM||(NREUM={});NREUM.info={applicationID:'${{ secrets.NEW_RELIC_BROWSER_APP_ID }}',licenseKey:'${{ secrets.NEW_RELIC_BROWSER_KEY }}',env:'$ENV'}</script>"
+            find Frontend/dist -name '*.html' -print0 | xargs -0 sed -i "/<head>/a <script>window.NREUM||(NREUM={});NREUM.info={applicationID:'${{ secrets.NEW_RELIC_BROWSER_APP_ID }}',licenseKey:'${{ secrets.NEW_RELIC_BROWSER_KEY }}',env:'${{ env.ENV }}'}</script>"
             
-            # JavaScript (más robusto con xargs)
+            # JavaScript
             find Frontend/dist -name '*.js' -print0 | xargs -0 sed -i "1i //@newrelic"
           fi
-          
-          echo "✅ New Relic configurado para $ENV"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -98,7 +107,9 @@ jobs:
               "serviceId": "backend",
               "variables": {
                 "NEW_RELIC_LICENSE_KEY": "'"$NEW_RELIC_LICENSE_KEY"'",
-                "NEW_RELIC_APP_NAME": "'"$NEW_RELIC_APP_NAME"'"
+                "NEW_RELIC_APP_NAME": "'"$NEW_RELIC_APP_NAME"'",
+                "DB_URL": "'"${{ secrets.DB_URL }}"'",
+                "NODE_ENV": "production"
               }
             }'
 
