@@ -7,7 +7,8 @@ on:
     branches: [ main ]
 
 env:
-  PORT: 3001 
+  PORT: 3001
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
 jobs:
   test-and-build:
@@ -26,6 +27,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install jq (para JSON processing)
+        run: sudo apt-get install -y jq
+
+      - name: Install Railway CLI
+        if: github.ref == 'refs/heads/main'
+        run: npm install -g @railway/cli
+
       - name: Run Backend Tests
         env:
           DB_URL: ${{ secrets.DB_URL }}
@@ -40,25 +48,11 @@ jobs:
       - name: Prepare Frontend
         run: |
           cd Frontend
-          echo "📁 Estructura actual:"
-          ls -R
-          
           mkdir -p dist
-          
-          if [ -d "paginas" ]; then
-            cp -r paginas/*.html dist/
-          else
-            cp -r *.html dist/ || echo "⚠️ No hay HTML en raíz"
-          fi
-          
+          [ -d "paginas" ] && cp -r paginas/*.html dist/ || cp -r *.html dist/ || echo "⚠️ No hay HTML"
           for folder in estilos css js imagenes; do
-            if [ -d "$folder" ]; then
-              cp -r "$folder" dist/
-            fi
+            [ -d "$folder" ] && cp -r "$folder" dist/
           done
-          
-          echo "✅ Frontend preparado en /dist"
-          ls -R dist
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -69,14 +63,9 @@ jobs:
             Frontend/dist/
             package.json
 
-      - name: Install Railway CLI
-        if: github.ref == 'refs/heads/main'
-        run: npm install -g @railway/cli
-
       - name: Deploy to Railway
         if: github.ref == 'refs/heads/main'
         run: |
-          echo "${{ secrets.RAILWAY_TOKEN }}" | railway login
           railway up --service backend --environment production
 
       - name: Send Email Notification
@@ -87,40 +76,50 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.SENDGRID_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
-              "personalizations": [
-                {
-                  "to": [{"email": "${{ secrets.NOTIFICATION_EMAIL }}"}],
-                  "subject": "Resultado del despliegue: ${{ job.status }}"
-                }
-              ],
+              "personalizations": [{
+                "to": [{"email": "${{ secrets.NOTIFICATION_EMAIL }}"}],
+                "subject": "Resultado del despliegue: ${{ job.status }}"
+              }],
               "from": {"email": "noreply@miempresa.com"},
-              "content": [
-                {
-                  "type": "text/plain",
-                  "value": "El despliegue de Miel Dorada ha ${{ job.status }}\n\nDetalles:\n- Repositorio: ${{ github.repository }}\n- Rama: ${{ github.ref }}\n- Ejecución: ${{ github.run_id }}\n\nVer detalles: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                }
-              ]
+              "content": [{
+                "type": "text/plain",
+                "value": "El despliegue de Miel Dorada ha ${{ job.status }}\n\nDetalles:\n- Repositorio: ${{ github.repository }}\n- Rama: ${{ github.ref }}\n- Ejecución: ${{ github.run_id }}\n\nVer detalles: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }]
             }'
 
       - name: Send Teams Notification
         if: always()
         run: |
-          curl -X POST \
-            "${{ secrets.TEAMS_WEBHOOK_URI }}" \
-            -H "Content-Type: application/json" \
-            -d '{
+          if [[ ! "${{ secrets.TEAMS_WEBHOOK_URI }}" =~ ^https://.*\.webhook\.office\.com ]]; then
+            echo "⚠️ Webhook URI no válido"
+            exit 0
+          fi
+          
+          JSON_PAYLOAD=$(jq -n \
+            --arg status "${{ job.status }}" \
+            --arg repo "${{ github.repository }}" \
+            --arg branch "${{ github.ref }}" \
+            --arg run_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg run_number "${{ github.run_number }}" \
+            --arg color "$(if [ "${{ job.status }}" == "success" ]; then echo "2EB886"; else echo "A30200"; fi)" \
+            '{
               "@type": "MessageCard",
               "@context": "http://schema.org/extensions",
-              "themeColor": "'"${{ job.status == 'success' && '2EB886' || 'A30200' }}"'",
+              "themeColor": $color,
               "summary": "Resultado del despliegue Miel Dorada",
-              "title": "Despliegue Miel Dorada - '"${{ job.status }}"'",
-              "text": "**Estado:** '"${{ job.status }}"'<br>**Repositorio:** '"${{ github.repository }}"'<br>**Rama:** '"${{ github.ref }}"'<br>**Ejecución:** [#'"${{ github.run_number }}"']('"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"')",
+              "title": "Despliegue Miel Dorada - \($status)",
+              "text": "**Estado:** \($status)<br>**Repositorio:** \($repo)<br>**Rama:** \($branch)<br>**Ejecución:** [\($run_number)](\($run_url))",
               "potentialAction": [{
                 "@type": "OpenUri",
                 "name": "Ver Detalles",
                 "targets": [{
                   "os": "default",
-                  "uri": "'"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"'"
+                  "uri": $run_url
                 }]
               }]
-            }'
+            }')
+          
+          curl -X POST \
+            "${{ secrets.TEAMS_WEBHOOK_URI }}" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD"
