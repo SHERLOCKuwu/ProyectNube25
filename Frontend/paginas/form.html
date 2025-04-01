@@ -102,130 +102,100 @@
     <script src="../js/popper.min.js"></script>
     <script src="../js/bootstrap.min.js"></script>
     <script>
-        // Obtener parámetros de la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        const mode = urlParams.get('Mode');
-    
-        // Verificar autenticación
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = './login.html';
-            throw new Error('No autenticado');
-        }
-    
-        // Configurar URL según el modo
-        const BASE_URL = 'https://proyectnube25-production-e6e4.up.railway.app/producto';
-        const URL = mode === 'INS' ? BASE_URL : `${BASE_URL}/${id}`;
-        const MetodoHTTP = mode === 'INS' ? 'POST' : 'PUT';
-    
-        // Elementos del formulario
-        const form = document.getElementById('productForm');
-        const IdInput = document.getElementById('Id');
-        const NombreInput = document.getElementById('Nombre');
-        const TipoInput = document.getElementById('Tipo');
-        const PrecioInput = document.getElementById('Precio');
-        const FechaCaducidadInput = document.getElementById('FechaCaducidad');
-        const StockInput = document.getElementById('Stock');
-        const mensajeDiv = document.getElementById('mensaje');
-    
-        // Cargar datos si es edición
-        if (mode === 'UPD' && id) {
-            fetch(URL, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Error al cargar el producto');
-                return response.json();
-            })
-            .then(data => {
-                IdInput.value = data._id || '';
-                NombreInput.value = data.nombre || '';
-                TipoInput.value = data.tipo || '';
-                PrecioInput.value = data.precio || '';
-                
-                if (data.fechaCaducidad) {
-                    const fecha = new Date(data.fechaCaducidad);
-                    FechaCaducidadInput.value = fecha.toISOString().split('T')[0];
-                }
-                
-                StockInput.value = data.stock || '';
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                mostrarMensaje('Error al cargar el producto: ' + err.message, 'error');
-            });
-        }
-    
-        // Función para mostrar mensajes
-        function mostrarMensaje(mensaje, tipo) {
-            mensajeDiv.textContent = mensaje;
-            mensajeDiv.style.display = 'block';
-            mensajeDiv.className = `alert alert-${tipo}`;
-        }
-    
-        // Validar formulario
-        function validarFormulario() {
-            const nombre = NombreInput.value.trim();
-            const tipo = TipoInput.value.trim();
-            const precio = parseFloat(PrecioInput.value);
-            
-            if (!nombre || !tipo || isNaN(precio)) {
-                mostrarMensaje('Nombre, tipo y precio son campos obligatorios', 'error');
-                return false;
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
             }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            const mode = urlParams.get('Mode');
+            const BASE_URL = 'https://proyectnube25-production-e6e4.up.railway.app/api/productos';
             
-            if (precio <= 0) {
-                mostrarMensaje('El precio debe ser mayor que cero', 'error');
-                return false;
+            const form = document.getElementById('productForm');
+            const mensajeDiv = document.getElementById('mensaje');
+
+            // Cargar datos si es edición
+            if (mode === 'UPD' && id) {
+                fetch(`${BASE_URL}/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Error al cargar producto');
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('Id').value = data._id;
+                    document.getElementById('Nombre').value = data.nombre;
+                    document.getElementById('Tipo').value = data.tipo;
+                    document.getElementById('Precio').value = data.precio;
+                    
+                    if (data.fechaCaducidad) {
+                        const fecha = new Date(data.fechaCaducidad);
+                        document.getElementById('FechaCaducidad').value = fecha.toISOString().split('T')[0];
+                    }
+                    
+                    document.getElementById('Stock').value = data.stock || '';
+                })
+                .catch(err => {
+                    mostrarMensaje(err.message, 'error');
+                });
             }
-            
-            return true;
-        }
-    
-        // Manejar envío del formulario
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!validarFormulario()) return;
-    
-            const producto = {
-                nombre: NombreInput.value.trim(),
-                tipo: TipoInput.value.trim(),
-                precio: parseFloat(PrecioInput.value),
-                fechaCaducidad: FechaCaducidadInput.value || undefined,
-                stock: StockInput.value ? parseInt(StockInput.value) : undefined
-            };
-    
-            try {
-                const response = await fetch(URL, {
-                    method: MetodoHTTP,
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const producto = {
+                    nombre: document.getElementById('Nombre').value.trim(),
+                    tipo: document.getElementById('Tipo').value.trim(),
+                    precio: parseFloat(document.getElementById('Precio').value),
+                    fechaCaducidad: document.getElementById('FechaCaducidad').value || undefined,
+                    stock: document.getElementById('Stock').value ? parseInt(document.getElementById('Stock').value) : undefined
+                };
+
+                // Validación
+                if (!producto.nombre || !producto.tipo || isNaN(producto.precio)) {
+                    mostrarMensaje('Nombre, tipo y precio son obligatorios', 'error');
+                    return;
+                }
+
+                const url = mode === 'INS' ? BASE_URL : `${BASE_URL}/${id}`;
+                const method = mode === 'INS' ? 'POST' : 'PUT';
+
+                fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(producto)
+                })
+                .then(response => {
+                    if (!response.ok) return response.json().then(err => { throw err; });
+                    return response.json();
+                })
+                .then(data => {
+                    mostrarMensaje(
+                        mode === 'INS' ? 'Producto creado exitosamente' : 'Producto actualizado exitosamente',
+                        'success'
+                    );
+                    setTimeout(() => {
+                        window.location.href = 'administrarProductos.html';
+                    }, 1500);
+                })
+                .catch(err => {
+                    mostrarMensaje(err.message || 'Error al guardar el producto', 'error');
                 });
-    
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.message || 'Error en la operación');
-                }
-    
-                const data = await response.json();
-                mostrarMensaje(
-                    mode === 'INS' ? 'Producto creado con éxito' : 'Producto actualizado con éxito', 
-                    'success'
-                );
-                
-                setTimeout(() => {
-                    window.location.href = 'administrarProductos.html';
-                }, 1500);
-            } catch (err) {
-                console.error('Error:', err);
-                mostrarMensaje(err.message || 'Hubo un error al procesar la solicitud', 'error');
+            });
+
+            function mostrarMensaje(texto, tipo) {
+                mensajeDiv.textContent = texto;
+                mensajeDiv.className = `alert alert-${tipo}`;
+                mensajeDiv.style.display = 'block';
             }
         });
     </script>

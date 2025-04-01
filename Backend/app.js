@@ -18,18 +18,20 @@ mongoose.connect(URL_CONNECT)
 
 const app = express();
 
-// Middlewares
-app.use(cors({ 
-    origin: '*',
-    methods: ['GET','POST','DELETE','UPDATE','PUT','PATCH']
+app.use(cors({
+    origin: ['proyectnube25-production-e6e4.up.railway.app', 'http://localhost:3001'], // Añade todos los orígenes necesarios
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../Frontend')));
 app.use(express.static(path.join(__dirname, '../Frontend/paginas')));
 app.use("/uploads", express.static("uploads"));
 
 // Rutas
-app.use('/api', productoRoutes); // Cambia esto
+app.use('/api', productoRoutes); 
 app.use('/api/auth', AuthRoutes);
 app.use('/api/tipos', tipoProductoRoutes);
 

@@ -97,6 +97,91 @@
 
 
     <script>
+        // En productos.html, reemplaza el script por este:
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            let pagina = 1;
+            let registrosPorPagina = 5;
+
+            function cargarProductos() {
+                const url = `https://proyectnube25-production-e6e4.up.railway.app/api/productos/paginados?page=${pagina}&limit=${registrosPorPagina}`;
+                
+                fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Error al cargar productos');
+                    return response.json();
+                })
+                .then(data => {
+                    const tableBody = document.querySelector('#miTabla');
+                    tableBody.innerHTML = '';
+
+                    data.productos.forEach(item => {
+                        const fila = tableBody.insertRow();
+                        fila.insertCell().textContent = item._id;
+                        fila.insertCell().textContent = item.nombre;
+                        fila.insertCell().textContent = item.tipo;
+                        fila.insertCell().textContent = `$${item.precio.toFixed(2)}`;
+                        
+                        const fechaCell = fila.insertCell();
+                        fechaCell.textContent = item.fechaCaducidad ? 
+                            new Date(item.fechaCaducidad).toLocaleDateString() : 'N/A';
+                        
+                        fila.insertCell().textContent = item.stock || 'N/A';
+                        
+                        const imgCell = fila.insertCell();
+                        if (item.urlImagen) {
+                            const img = document.createElement('img');
+                            img.src = `https://proyectnube25-production-e6e4.up.railway.app/${item.urlImagen}`;
+                            img.style.maxWidth = '50px';
+                            imgCell.appendChild(img);
+                        } else {
+                            imgCell.textContent = 'Sin imagen';
+                        }
+                    });
+
+                    document.querySelector('#paginaActual').textContent = `Página ${pagina}`;
+                    document.querySelector('#anterior').disabled = pagina === 1;
+                    document.querySelector('#siguiente').disabled = data.productos.length < registrosPorPagina;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    if (err.message.includes('401')) {
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+
+            // Event listeners para paginación
+            document.querySelector('#registrosPorPagina').addEventListener('change', (e) => {
+                registrosPorPagina = parseInt(e.target.value);
+                pagina = 1;
+                cargarProductos();
+            });
+
+            document.querySelector('#anterior').addEventListener('click', () => {
+                if (pagina > 1) {
+                    pagina--;
+                    cargarProductos();
+                }
+            });
+
+            document.querySelector('#siguiente').addEventListener('click', () => {
+                pagina++;
+                cargarProductos();
+            });
+
+            // Cargar inicialmente
+            cargarProductos();
+        });
 
     </script>
 
