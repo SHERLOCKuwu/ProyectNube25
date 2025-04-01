@@ -66,16 +66,23 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          # Instalar CLI si no está presente
-          if ! command -v railway &> /dev/null; then
-            npm install -g @railway/cli
-          fi
-
-          # Configurar autenticación
-          echo "$RAILWAY_TOKEN" | railway login
+          # Instalar CLI globalmente
+          npm install -g @railway/cli
           
-          # Enlazar proyecto
-          railway link $RAILWAY_PROJECT_ID
+          # Crear directorio de configuración
+          mkdir -p ~/.railway
+          
+          # Crear archivo de configuración con token y project ID
+          cat > ~/.railway/config.json <<EOF
+          {
+            "token": "$RAILWAY_TOKEN",
+            "projectId": "$RAILWAY_PROJECT_ID",
+            "teamId": null
+          }
+          EOF
+          
+          # Verificar conexión
+          railway whoami
           
           # Realizar despliegue
           railway up --service backend --environment production
