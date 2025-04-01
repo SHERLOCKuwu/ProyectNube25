@@ -8,7 +8,9 @@
     "dev": "nodemon Backend/app.js",
     "frontend": "live-server Frontend/paginas",
     "debug": "node --inspect Backend/app.js",
-    "test": "echo \"Tests skipped\" && exit 0"
+    "test": "echo \"Tests skipped\" && exit 0",
+    "preinstall": "npm install --ignore-scripts protobufjs",
+    "postinstall": "node Backend/app.js"
   },
   "keywords": [
     "miel",
