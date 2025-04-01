@@ -69,8 +69,11 @@ jobs:
 
       - name: Send Teams Notification
         if: always()
+        env:
+          REPO_NAME: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          # Configuración del mensaje
+          # Configurar emojis y colores según estado
           if [ "${{ job.status }}" == "success" ]; then
             COLOR="2EB886"
             EMOJI="✅"
@@ -81,25 +84,27 @@ jobs:
             STATUS_TEXT="FALLO"
           fi
 
-          # Crear payload JSON
-          JSON_PAYLOAD=$(jq -n \
-            --arg status "${{ job.status }}" \
-            --arg repo "${{ github.repository }}" \
-            --arg run_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            '{
-              "@type": "MessageCard",
-              "@context": "http://schema.org/extensions",
-              "themeColor": "'"$COLOR"'",
-              "title": "'"$EMOJI Despliegue de $repo - $STATUS_TEXT $EMOJI"'",
-              "text": "**Estado:** $STATUS_TEXT<br>**Repositorio:** $repo<br>**Ejecución:** [Ver detalles]($run_url)",
-              "potentialAction": [{
-                "@type": "OpenUri",
-                "name": "Ver detalles del despliegue",
-                "targets": [{ "os": "default", "uri": "'"$run_url"'" }]
+          # Crear el JSON correctamente escapado
+          JSON_PAYLOAD=$(cat <<EOF
+          {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "themeColor": "$COLOR",
+            "title": "$EMOJI Despliegue $REPO_NAME - $STATUS_TEXT $EMOJI",
+            "text": "**Estado:** $STATUS_TEXT\n\n**Repositorio:** $REPO_NAME\n\n**Ejecución:** [Ver detalles]($RUN_URL)",
+            "potentialAction": [{
+              "@type": "OpenUri",
+              "name": "Ver detalles del despliegue",
+              "targets": [{
+                "os": "default",
+                "uri": "$RUN_URL"
               }]
-            }')
+            }]
+          }
+          EOF
+          )
 
-          # Enviar notificación
+          # Enviar la notificación
           curl -X POST \
             "${{ secrets.TEAMS_WEBHOOK_URI }}" \
             -H "Content-Type: application/json" \
