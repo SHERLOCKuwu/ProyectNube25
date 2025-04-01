@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config()
+require('newrelic');
 
 const URL_CONNECT = process.env.URL_CONNECT;
 const PORT = process.env.PORT;
