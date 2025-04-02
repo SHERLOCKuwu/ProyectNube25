@@ -9,7 +9,17 @@
     <link rel="stylesheet" href="../estilos/estilos.css">
     <link rel="icon" href="../imagenes/logo12.png" type="image/png"> 
     <link rel="stylesheet" href="../estilos/animacionabejas.css">
-
+    <script>
+        app.get('/', (req, res) => {
+        const html = `
+            <html>
+            <head>${newrelic.getBrowserTimingHeader()}</head> <!-- 👈 Inyecta aquí -->
+            <body>Hola mundo</body>
+            </html>
+        `;
+        res.send(html);
+        });
+    </script>
 </head>
 
 <body class="body-objetivos">
