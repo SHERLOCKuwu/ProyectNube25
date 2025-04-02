@@ -1,3 +1,5 @@
 node_modules/
 .env
 uploads/
+newrelic.js
+newrelic_agent.log
