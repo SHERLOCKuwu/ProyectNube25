@@ -81,69 +81,81 @@
     <script>
         let pagina = 1;
         let registrosPorPagina = 5;
+        let totalPaginas = 1;
 
-        function cargarTabla() {
+        async function cargarTabla() {
             const token = localStorage.getItem('token');
             if (!token) {
-                window.location.href = 'login.html'; // Redirigir si no hay token
+                window.location.href = 'login.html';
                 return;
             }
 
-            const url = `https://proyectnube25-production-e6e4.up.railway.app/administrarProductos?page=${pagina}&limit=${registrosPorPagina}`;
-            fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
+            try {
+                const url = `https://proyectnube25-production-e6e4.up.railway.app/administrarProductos?page=${pagina}&limit=${registrosPorPagina}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                    }
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
-            })
-            .then(response => {
-                if (response.ok) return response.json();
-                if (response.status === 401) {
-                    window.location.href = 'login.html';
+
+                const data = await response.json();
+                
+                // Verifica la estructura de la respuesta
+                if (!data || !Array.isArray(data)) {
+                    throw new Error('Formato de respuesta inválido');
                 }
-                throw new Error('Error en la respuesta del servidor');
-            })
-            
-            fetch(url)
-                .then(response => {
-                    if (response.ok) return response.json();
-                    throw new Error('Error en la respuesta del servidor');
-                })
-                .then(data => {
-                    const tableBody = document.querySelector('#miTabla');
-                    tableBody.innerHTML = '';
 
-                    data.productos.forEach(item => {
-                        const fila = tableBody.insertRow();
-                        fila.insertCell().textContent = item._id;
-                        fila.insertCell().textContent = item.nombre;
-                        fila.insertCell().textContent = item.tipo;
-                        fila.insertCell().textContent = item.precio;
-                        fila.insertCell().textContent = item.fechaCaducidad;
-                        fila.insertCell().textContent = item.stock;
+                const tableBody = document.querySelector('#miTabla');
+                tableBody.innerHTML = '';
 
-                        const linkCellUpdate = fila.insertCell();
-                        const linkUpdate = document.createElement('a');
-                        linkUpdate.href = `./form.html?Mode=UPD&id=${item._id}`;
-                        linkUpdate.textContent = 'Actualizar';
-                        linkUpdate.classList.add('btn', 'btn-warning', 'btn-sm');
-                        linkCellUpdate.appendChild(linkUpdate);
+                // Asumiendo que data es un array directo de productos
+                data.forEach(item => {
+                    const fila = tableBody.insertRow();
+                    fila.insertCell().textContent = item._id || '';
+                    fila.insertCell().textContent = item.nombre || '';
+                    fila.insertCell().textContent = item.tipo || '';
+                    fila.insertCell().textContent = item.precio || '';
+                    fila.insertCell().textContent = item.fechaCaducidad ? new Date(item.fechaCaducidad).toLocaleDateString() : '';
+                    fila.insertCell().textContent = item.stock || '';
 
-                        const linkCellDelete = fila.insertCell();
-                        const linkDelete = document.createElement('a');
-                        linkDelete.href = `./form.html?Mode=DLT&id=${item._id}`;
-                        linkDelete.textContent = 'Eliminar';
-                        linkDelete.classList.add('btn', 'btn-danger', 'btn-sm');
-                        linkCellDelete.appendChild(linkDelete);
-                    });
+                    // Botón Actualizar
+                    const linkCellUpdate = fila.insertCell();
+                    const linkUpdate = document.createElement('a');
+                    linkUpdate.href = `./form.html?Mode=UPD&id=${item._id}`;
+                    linkUpdate.textContent = 'Actualizar';
+                    linkUpdate.classList.add('btn', 'btn-warning', 'btn-sm');
+                    linkCellUpdate.appendChild(linkUpdate);
 
-                    document.querySelector('#paginaActual').textContent = `Página ${pagina}`;
-                    document.querySelector('#anterior').disabled = pagina === 1;
-                })
-                .catch(err => console.error(err));
+                    // Botón Eliminar
+                    const linkCellDelete = fila.insertCell();
+                    const linkDelete = document.createElement('a');
+                    linkDelete.href = `./form.html?Mode=DLT&id=${item._id}`;
+                    linkDelete.textContent = 'Eliminar';
+                    linkDelete.classList.add('btn', 'btn-danger', 'btn-sm');
+                    linkCellDelete.appendChild(linkDelete);
+                });
+
+                // Actualizar controles de paginación
+                document.querySelector('#paginaActual').textContent = `Página ${pagina}`;
+                document.querySelector('#anterior').disabled = pagina === 1;
+                document.querySelector('#siguiente').disabled = pagina >= totalPaginas;
+
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                alert('No se pudieron cargar los productos. Por favor intente nuevamente.');
+            }
         }
 
+        // Event Listeners
         document.querySelector('#registrosPorPagina').addEventListener('change', (e) => {
-            registrosPorPagina = e.target.value;
+            registrosPorPagina = parseInt(e.target.value);
             pagina = 1;
             cargarTabla();
         });
@@ -160,7 +172,8 @@
             cargarTabla();
         });
 
-        cargarTabla();
+        // Cargar tabla al inicio
+        document.addEventListener('DOMContentLoaded', cargarTabla);
     </script>
 </body>
 
